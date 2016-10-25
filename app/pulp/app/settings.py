@@ -67,7 +67,7 @@ for plugin in PULP_PLUGINS:
 
 if DEBUG:
     try:
-        from pulp.app.tests import testapp
+        from pulp.app.tests import testapp  # NOQA
         INSTALLED_APPS.append('pulp.app.tests.testapp')
     except ImportError:
         pass

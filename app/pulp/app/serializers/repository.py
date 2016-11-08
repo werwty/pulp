@@ -64,6 +64,12 @@ class ImporterSerializer(MasterModelSerializer):
     Every importer defined by a plugin should have an Importer serializer that inherits from this
     class. Please import from `pulp.app.serializers` rather than from this module directly.
     """
+    # _href is normally provided by the base class, but Importer's
+    # "name" lookup field means _href must be explicitly declared.
+    _href = serializers.HyperlinkedIdentityField(
+        view_name='importers-detail',
+        lookup_field='name',
+    )
     name = serializers.CharField(
         help_text='A name for this importer, unique within the associated repository.'
     )

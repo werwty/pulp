@@ -201,6 +201,7 @@ class _DetailFieldMixin:
         super(_DetailFieldMixin, self).__init__(view_name, **kwargs)
 
     def _view_name(self, obj):
+
         # this is probably memoizeable based on the model class if we want to get cachey
         try:
             obj = obj.cast()
@@ -213,8 +214,10 @@ class _DetailFieldMixin:
         return view_name_for_model(obj, 'detail')
 
     def get_url(self, obj, view_name, *args, **kwargs):
+
         # ignore the passed in view name and return the url to the cast unit, not the generic unit
         view_name = self._view_name(obj)
+
         return super(_DetailFieldMixin, self).get_url(obj, view_name, *args, **kwargs)
 
 
@@ -239,6 +242,7 @@ class DetailRelatedField(_DetailFieldMixin, serializers.HyperlinkedRelatedField)
     Subclasses must indicate the Master model they represent by declaring a queryset
     in their class body, usually <MasterModelImplementation>.objects.all().
     """
+
     def get_object(self, *args, **kwargs):
         # return the cast object, not the generic contentunit
-        return super(DetailRelatedField, self).get_object(*args, **kwargs).cast()
+        return super(DetailRelatedField, self).get_object(*args, **kwargs)

@@ -3,7 +3,7 @@ from rest_framework import serializers
 from pulp.app import models
 from pulp.app.serializers import (MasterModelSerializer, ModelSerializer,
                                   NotesKeyValueRelatedField, RepositoryRelatedField,
-                                  ScratchpadKeyValueRelatedField)
+                                  ScratchpadKeyValueRelatedField, ContentRelatedField, ContentSerializer, base)
 
 
 class RepositorySerializer(ModelSerializer):
@@ -78,4 +78,31 @@ class ImporterSerializer(MasterModelSerializer):
 
     class Meta:
         abstract = True
-        fields = MasterModelSerializer.Meta.fields + ('name', 'repository')
+        model = models.Publisher
+        fields = MasterModelSerializer.Meta.fields + (
+            'name', 'last_updated', 'repository', 'auto_publish', 'relative_path', 'last_published'
+        )
+
+
+class ContentURLSerializer(MasterModelSerializer):
+    _href = ContentRelatedField()
+
+    class Meta:
+        fields = MasterModelSerializer.Meta.fields
+        model = models.RepositoryContent
+
+class RepositoryContentSerializer(ModelSerializer):
+    def __init__(self, *args, **kwargs):
+        super(RepositoryContentSerializer, self).__init__(*args, **kwargs)
+        self.fields['content'] = ContentURLSerializer(context=self.context)
+
+    #content = ContentRelatedField(context=self.context)
+
+    repository = RepositoryRelatedField()
+
+    class Meta:
+        model = models.RepositoryContent
+        fields = (
+         'repository', 'content'
+        )
+

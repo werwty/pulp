@@ -8,7 +8,9 @@ class ContentRelatedField(DetailRelatedField):
     """
     Serializer Field for use when relating to Content Detail Models
     """
+    lookup_field = 'pk'
     queryset = models.Content.objects.all()
+
 
 
 class RepositoryRelatedField(serializers.HyperlinkedRelatedField):

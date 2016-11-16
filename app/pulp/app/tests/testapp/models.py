@@ -13,6 +13,7 @@ class TestContent(Content):
     name = models.TextField()
 
     class Meta:
+        db_table = "testapp_testcontent"
         pass
 
 

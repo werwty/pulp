@@ -60,7 +60,8 @@ class Content(MasterModel):
                 h.update(value)
         return h.hexdigest()
 
-
+    class Meta:
+        db_table = "pulp_app_content"
 class Artifact(Model):
     """
     A file associated with a piece of content.

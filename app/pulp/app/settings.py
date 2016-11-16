@@ -28,7 +28,7 @@ SECRET_KEY = '*u&ouzf)09#*dnm8t9jxahz-y=uwe0g&yn9ir-(lj@l*$cc%qo'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['192.168.121.172']
 
 MEDIA_ROOT = '/var/lib/pulp/content/'
 DEFAULT_FILE_STORAGE = 'pulp.app.models.storage.FileSystem'

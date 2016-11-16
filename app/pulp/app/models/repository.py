@@ -63,6 +63,9 @@ class Repository(Model):
         return "<{}: {}>".format(self._meta.model.__name__, self.name)
 
 
+    class Meta:
+        db_table = "pulp_app_repository"
+
 class RepositoryGroup(Model):
     """
     A group of repositories.
@@ -247,3 +250,7 @@ class RepositoryContent(Model):
         self.repository.last_content_removed = timezone.now()
         self.repository.save()
         super(RepositoryContent, self).delete(*args, **kwargs)
+
+
+    class Meta:
+        db_table = "pulp_app_repositorycontent"

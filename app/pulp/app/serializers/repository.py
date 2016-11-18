@@ -3,7 +3,7 @@ from rest_framework import serializers
 from pulp.app import models
 from pulp.app.serializers import (MasterModelSerializer, ModelSerializer,
                                   NotesKeyValueRelatedField, RepositoryRelatedField,
-                                  ScratchpadKeyValueRelatedField)
+                                  ScratchpadKeyValueRelatedField, ContentRelatedField)
 
 
 class RepositorySerializer(ModelSerializer):
@@ -79,3 +79,11 @@ class ImporterSerializer(MasterModelSerializer):
     class Meta:
         abstract = True
         fields = MasterModelSerializer.Meta.fields + ('name', 'repository')
+
+class RepositoryContentSerializer(ModelSerializer):
+    content = ContentRelatedField()
+    repository = RepositoryRelatedField()
+
+    class Meta:
+        model = models.RepositoryContent
+        fields = ('repository', 'content')

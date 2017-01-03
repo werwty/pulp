@@ -59,7 +59,7 @@ CELERY_TICK_DEFAULT_WAIT_TIME = 90
 # Constant used to determine whether a CeleryBeatLock should be removed due to age
 CELERYBEAT_LOCK_MAX_AGE = 200
 # The amount of time in seconds before a Celery process is considered missing
-CELERY_TIMEOUT_SECONDS = 300
+CELERY_TIMEOUT_SECONDS = 60
 # The interval in seconds for which the Celery Process monitor thread sleeps between
 # checking for missing Celery processes.
 CELERY_CHECK_INTERVAL = 60

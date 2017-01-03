@@ -6,7 +6,8 @@ from celery.beat import ScheduleEntry
 import mock
 from mongoengine import NotUniqueError
 
-from pulp.common.constants import RESOURCE_MANAGER_WORKER_NAME, SCHEDULER_WORKER_NAME
+from pulp.common.constants import RESOURCE_MANAGER_WORKER_NAME, SCHEDULER_WORKER_NAME,\
+    CELERY_TIMEOUT_SECONDS
 from pulp.server.async import scheduler
 from pulp.server.async.celery_instance import celery as app
 from pulp.server.db.model import dispatch, Worker
@@ -506,7 +507,8 @@ class TestCeleryProcessTimeoutMonitorCheckCeleryProcesses(unittest.TestCase):
         scheduler.CeleryProcessTimeoutMonitor().check_celery_processes()
         mock__logger.debug.assert_has_calls([
             mock.call('Checking if pulp_workers, pulp_celerybeat, or '
-                      'pulp_resource_manager processes are missing for more than 300 seconds'),
+                      'pulp_resource_manager processes are missing for more than %s seconds'
+                      % CELERY_TIMEOUT_SECONDS),
             mock.call('1 pulp_worker processes, 1 pulp_celerybeat processes, '
                       'and 1 pulp_resource_manager processes')
         ])

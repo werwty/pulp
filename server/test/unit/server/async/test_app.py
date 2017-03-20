@@ -7,9 +7,12 @@ import unittest
 
 import mock
 
+from pulp.server.async import app
 from pulp.server.managers.factory import initialize
 from pulp.tasking import celery_app as app
-from pulp.tasking.constants import TASKING_CONSTANTS, 
+from pulp.tasking.constants import TASKING_CONSTANTS
+from django.db.utils import IntegrityError
+
 
 initialize()
 

@@ -42,7 +42,7 @@ class PulpTask(CeleryTask):
 
 
 @task(base=PulpTask, acks_late=True)
-def _queue_reserved_task(name, inner_task_id, resource_id, inner_args, inner_kwargs):
+def _queue_reserved_task(name, inner_task_id, resource_id, inner_args, inner_kwargs, options):
     """
     A task that encapsulates another task to be dispatched later. This task being encapsulated is
     called the "inner" task, and a task name, UUID, and accepts a list of positional args
@@ -64,6 +64,12 @@ def _queue_reserved_task(name, inner_task_id, resource_id, inner_args, inner_kwa
                           will ensure that no other tasks that want that same reservation will run
                           concurrently with yours.
     :type  resource_id:   basestring
+    :param inner_args:    The positional arguments to pass on to the task.
+    :type  inner_args:    tuple
+    :param inner_kwargs:  The keyword arguments to pass on to the task.
+    :type  inner_kwargs:  dict
+    :param **options:     For all options accepted by apply_async please visit: http://docs.celeryproject.org/en/latest/reference/celery.app.task.html#celery.app.task.Task.apply_async  #NOQA
+    :return:              An AsyncResult instance as returned by Celery's apply_async
 
     :return: None
     """
@@ -89,14 +95,12 @@ def _queue_reserved_task(name, inner_task_id, resource_id, inner_args, inner_kwa
     task_status = TaskStatus.objects.get(pk=inner_task_id)
     ReservedResource.objects.create(task=task_status, worker=worker, resource=resource_id)
 
-    inner_kwargs['routing_key'] = worker.name
-    inner_kwargs['exchange'] = DEDICATED_QUEUE_EXCHANGE
-    inner_kwargs['task_id'] = inner_task_id
-
     try:
-        celery.tasks[name].apply_async(*inner_args, **inner_kwargs)
+        celery.tasks[name].apply_async(args=inner_args, task_id=inner_task_id,
+                                       routing_key=worker.name, exchange=DEDICATED_QUEUE_EXCHANGE,
+                                       kwargs=inner_kwargs, **options)
     finally:
-        _release_resource.apply_async((inner_task_id, ), routing_key=worker.name,
+        _release_resource.apply_async(args=(inner_task_id, ), routing_key=worker.name,
                                       exchange=DEDICATED_QUEUE_EXCHANGE)
 
 
@@ -149,7 +153,8 @@ class UserFacingTask(PulpTask):
     # this tells celery to not automatically log tracebacks for these exceptions
     throws = (PulpException,)
 
-    def apply_async_with_reservation(self, resource_type, resource_id, *args, **kwargs):
+    def apply_async_with_reservation(self, resource_type, resource_id, tags=[], group_id=None,
+                                     args=None, kwargs=None, **options):
         """
         This method provides normal apply_async functionality, while also serializing tasks by
         resource name. No two tasks that claim the same resource name can execute concurrently. It
@@ -162,9 +167,6 @@ class UserFacingTask(PulpTask):
         This method creates a :class:`pulp.app.models.Task` object. Pulp expects to poll on a
         task just after calling this method, so a Task entry needs to exist for it
         before it returns.
-
-        For a list of parameters accepted by the ``*args`` and ``**kwargs`` parameters, please see
-        the docblock for the :meth:`apply_async` method.
 
         :param resource_type: A string that identifies type of a resource
         :type resource_type:  basestring
@@ -181,7 +183,11 @@ class UserFacingTask(PulpTask):
         :param group_id:      The id to identify which group of tasks a task belongs to. This is an
                               optional argument which is pulled out of kwargs.
         :type  group_id:      uuid.UUID
-
+        :param args:          The positional arguments to pass on to the task.
+        :type  args:          tuple
+        :param kwargs:        The keyword arguments to pass on to the task.
+        :type  kwargs:        dict
+        :param **options:     For all options accepted by apply_async please visit: http://docs.celeryproject.org/en/latest/reference/celery.app.task.html#celery.app.task.Task.apply_async  #NOQA
         :return:              An AsyncResult instance as returned by Celery's apply_async
         :rtype:               celery.result.AsyncResult
         """
@@ -190,8 +196,6 @@ class UserFacingTask(PulpTask):
         resource_id = ":".join((resource_type, resource_id))
         inner_task_id = str(uuid.uuid4())
         task_name = self.name
-        tag_list = kwargs.get('tags', [])
-        group_id = kwargs.get('group_id', None)
 
         # Set the parent attribute if being dispatched inside of a Task
         parent_arg = self._get_parent_arg()
@@ -200,15 +204,16 @@ class UserFacingTask(PulpTask):
         with transaction.atomic():
             task_status = TaskStatus.objects.create(pk=inner_task_id, state=TaskStatus.WAITING,
                                                     group=group_id, **parent_arg)
-            for tag in tag_list:
+            for tag in tags:
                 task_status.tags.create(name=tag)
 
         # Call the outer task which is a promise to call the real task when it can.
-        _queue_reserved_task.apply_async(args=[task_name, inner_task_id, resource_id, args, kwargs],
+        _queue_reserved_task.apply_async(args=[task_name, inner_task_id, resource_id, args,
+                                               kwargs, options],
                                          queue=RESOURCE_MANAGER_QUEUE)
         return AsyncResult(inner_task_id)
 
-    def apply_async(self, *args, **kwargs):
+    def apply_async(self, tags=[], group_id=None, args=None, kwargs=None, **options):
         """
         A wrapper around the super() apply_async method. It allows us to accept a few more
         arguments than Celery does for our own purposes, listed below. It also allows us
@@ -225,14 +230,18 @@ class UserFacingTask(PulpTask):
 
         :param group_id:    The id that identifies which group of tasks a task belongs to
         :type group_id:     uuid.UUID
+        :param args:          The positional arguments to pass on to the task.
+        :type  args:          tuple
+        :param kwargs:        The keyword arguments to pass on to the task.
+        :type  kwargs:        dict
+        :param **options:     For all options accepted by apply_async please visit: http://docs.celeryproject.org/en/latest/reference/celery.app.task.html#celery.app.task.Task.apply_async  #NOQA
 
         :return:            An AsyncResult instance as returned by Celery's apply_async
         :rtype:             celery.result.AsyncResult
         """
-        tag_list = kwargs.pop('tags', [])
-        group_id = kwargs.pop('group_id', None)
-        async_result = super(UserFacingTask, self).apply_async(*args, **kwargs)
-        async_result.tags = tag_list
+
+        async_result = super(UserFacingTask, self).apply_async(args=args, kwargs=kwargs, **options)
+        async_result.tags = tags
 
         # Set the parent attribute if being dispatched inside of a Task
         parent_arg = self._get_parent_arg()
@@ -247,7 +256,7 @@ class UserFacingTask(PulpTask):
                 # The TaskStatus was already created with the call to apply_async_with_reservation
                 pass
             else:
-                for tag in tag_list:
+                for tag in tags:
                     task_status.tags.create(name=tag)
 
         return async_result

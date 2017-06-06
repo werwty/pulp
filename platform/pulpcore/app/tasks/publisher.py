@@ -3,8 +3,17 @@ from gettext import gettext as _
 from celery import shared_task
 
 from pulpcore.app import models
+from pulpcore.app import serializers
 from pulpcore.tasking.services import storage
 from pulpcore.tasking.tasks import UserFacingTask
+
+
+@shared_task(base=UserFacingTask)
+def update(publisher_id, data, *args, **kwargs):
+    instance = models.Publisher.objects.get(id=publisher_id)
+    serializer = serializers.PublisherSerializer(instance, data=data, partial=partial)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
 
 
 @shared_task(base=UserFacingTask)

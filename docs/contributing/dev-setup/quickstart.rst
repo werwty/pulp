@@ -32,13 +32,11 @@ Create a Vagrantfile in the root of the ``devel`` repository by copying ``Vagran
 
     $ cp Vagrantfile.example Vagrantfile
 
-Have a look at your Vagrantfile, notice that you can choose one or more ansible playbooks::
+Have a look at your new Vagrantfile, notice that you can execute one or more ansible playbooks::
 
-    # Minimal developer install of Pulp
-    ansible.playbook = "ansible/minimal-playbook.yml"
+    ansible.playbook = "ansible/example-playbook.yml"
 
-    # Developer install with Batteries Included.
-    # ansible.playbook = "ansible/example-playbook.yml"
+If you want to configure your environment differently, you can edit your Vagrantfile and any playbooks that it calls. 
 
 With a ``Vagrantfile`` in place, use the basic Vagrant commands to get started.
 

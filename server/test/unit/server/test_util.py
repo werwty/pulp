@@ -11,12 +11,15 @@ from pulp.server.exceptions import PulpCodedException
 
 class TestCopyTree(unittest.TestCase):
 
+    @patch('os.utime', autospec=True)
+    @patch('os.stat', autospec=True)
     @patch('pulp.server.util.copy')
     @patch('pulp.server.util.os.path.isdir')
     @patch('pulp.server.util.os.path.islink')
     @patch('pulp.server.util.os.makedirs')
     @patch('pulp.server.util.os.listdir')
-    def test_recursion(self, mock_list_dir, mock_makedirs, mock_islink, mock_isdir, mock_copy):
+    def test_recursion(self, mock_list_dir, mock_makedirs, mock_islink, mock_isdir, mock_copy,
+                       mock_stat, mock_utime):
         """
         Check that copytree is called recursively on all directories within a tree
 
@@ -41,6 +44,8 @@ class TestCopyTree(unittest.TestCase):
         # Assert that directories are created using makedirs()
         mock_makedirs.assert_has_calls([call('dst'), call('dst/dir1'), call('dst/dir2')])
 
+    @patch('os.utime', autospec=True)
+    @patch('os.stat', autospec=True)
     @patch('shutil.copystat', autospec=True)
     @patch('shutil.copy2', autospec=True)
     @patch('pulp.server.util.copy')
@@ -49,7 +54,7 @@ class TestCopyTree(unittest.TestCase):
     @patch('pulp.server.util.os.makedirs')
     @patch('pulp.server.util.os.listdir')
     def test_copy2_copystat_not_used(self, mock_list_dir, mock_makedirs, mock_islink, mock_isdir,
-                                     mock_copy, mock_copy2, mock_copystat):
+                                     mock_copy, mock_copy2, mock_copystat, mock_stat, mock_utime):
         """
         Test that only copy is used and copy2 and copystat are never called
 
@@ -132,6 +137,8 @@ class TestCopyTree(unittest.TestCase):
         # Assert that only dst and dir2 directories are created using makedirs()
         mock_makedirs.assert_has_calls([call('dst'), call('dst/dir2')])
 
+    @patch('os.utime', autospec=True)
+    @patch('os.stat', autospec=True)
     @patch('pulp.server.util.os.readlink')
     @patch('pulp.server.util.os.symlink')
     @patch('pulp.server.util.copy')
@@ -140,7 +147,7 @@ class TestCopyTree(unittest.TestCase):
     @patch('pulp.server.util.os.makedirs')
     @patch('pulp.server.util.os.listdir')
     def test_symlinks(self, mock_list_dir, mock_makedirs, mock_islink, mock_isdir, mock_copy,
-                      mock_symlink, mock_readlink):
+                      mock_symlink, mock_readlink, mock_stat, mock_utime):
         """
         Test that symlinks are created as symlinks
 

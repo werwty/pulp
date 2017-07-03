@@ -258,6 +258,9 @@ def copytree(src, dst, symlinks=False, ignore=None):
             else:
                 # Don't need to copy attributes
                 copy(srcname, dstname)
+                st = os.stat(srcname)
+                os.utime(dstname, (st.st_atime, st.st_mtime))
+
             # XXX What about devices, sockets etc.?
         except (IOError, os.error) as why:
             errors.append((srcname, dstname, str(why)))

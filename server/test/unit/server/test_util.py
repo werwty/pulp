@@ -1,6 +1,7 @@
 from cStringIO import StringIO
 import hashlib
 import shutil
+import tempfile
 
 from mock import Mock, patch, call
 
@@ -63,6 +64,21 @@ class TestCopyTree(unittest.TestCase):
         mock_copy.assert_called_with('src/file', 'dst/file')
         self.assertFalse(mock_copy2.called)
         self.assertFalse(mock_copystat.called)
+
+
+    def test_mtime_copied(self, directory):
+        """
+        Test that mtime is copied when copytree is called
+
+        """
+        with tempfile.NamedTemporaryFile() as srcfile:
+            util.copytree(srcfile['name'], 'dstfile')
+            st_src = os.stat(srcfile['name'])
+            st_dst= os.stat('dstfile')
+
+            self.assertEqual(st_src.st_mtime, st_dst.st_mtime)
+            os.remove('dstfile')
+
 
     @patch('pulp.server.util.os.makedirs')
     @patch('pulp.server.util.copy', autospec=True)

@@ -1,3 +1,10 @@
+import logging
+from django.shortcuts import get_object_or_404
+
+from rest_framework.reverse import reverse
+from rest_framework import status
+from rest_framework.response import Response
+
 from django_filters.rest_framework import filters, filterset
 from django_filters import CharFilter
 from rest_framework import decorators
@@ -9,8 +16,10 @@ from pulpcore.app.response import OperationPostponedResponse
 from pulpcore.app.serializers import (ContentSerializer, ImporterSerializer, PublisherSerializer,
                                       RepositorySerializer, RepositoryContentSerializer)
 from pulpcore.app.viewsets import NamedModelViewSet
+from pulpcore.app.viewsets.base import NestedNamedModelViewSet
 from pulpcore.app.viewsets.custom_filters import CharInFilter
 from pulpcore.common import tags
+_logger = logging.getLogger(__name__)
 
 
 class RepositoryFilter(filterset.FilterSet):
@@ -113,24 +122,31 @@ class PublisherFilter(ContentAdaptorFilter):
         fields = ContentAdaptorFilter.Meta.fields
 
 
-class ImporterViewSet(NamedModelViewSet):
+class ImporterViewSet(NestedNamedModelViewSet):
     endpoint_name = 'importers'
     nest_prefix = 'repositories'
     lookup_field = 'name'
     parent_lookup_kwargs = {'repository_name': 'repository__name'}
     serializer_class = ImporterSerializer
     queryset = Importer.objects.all()
+    nested_queryset = Repository.objects.all()
     filter_class = ImporterFilter
 
+
     def update(self, request, repository_name, name, partial=False):
+        if request.data.get('repository'):
+            return Response({}, status=status.HTTP_400_BAD_REQUEST)
+        data=request.data.copy()
+        data.update({'repository' : reverse('repositories-detail', args=[repository_name], request=request)})
+
         importer = self.get_object()
-        serializer = self.get_serializer(importer, data=request.data, partial=partial)
+        serializer = self.get_serializer(importer, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         app_label = importer._meta.app_label
         async_result = tasks.importer.update.apply_async_with_reservation(
             tags.RESOURCE_REPOSITORY_TYPE, repository_name,
             args=(importer.id, app_label, serializer.__class__.__name__),
-            kwargs={'data': request.data, 'partial': partial}
+            kwargs={'data': data, 'partial': partial}
         )
         return OperationPostponedResponse([async_result], request)
 
@@ -143,6 +159,19 @@ class ImporterViewSet(NamedModelViewSet):
         )
         return OperationPostponedResponse([async_result], request)
 
+    #def create(self, request, repository_name, *args, **kwargs):
+    #    data= request.data.copy()
+    #    data['repository'] = repository_name #reverse('repositories-detail', args=[repository_name], request=request)
+
+    #    serializer = self.get_serializer(data=data)
+    #    serializer.is_valid(raise_exception=True)
+
+    #    self.perform_create(serializer)
+    #    headers = self.get_success_headers(serializer.data)
+    #    return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+
     @decorators.detail_route(methods=('post',))
     def sync(self, request, repository_name, name):
         importer = self.get_object()
@@ -154,16 +183,23 @@ class ImporterViewSet(NamedModelViewSet):
         return OperationPostponedResponse([async_result], request)
 
 
-class PublisherViewSet(NamedModelViewSet):
+class PublisherViewSet(NestedNamedModelViewSet):
     endpoint_name = 'publishers'
     nest_prefix = 'repositories'
     lookup_field = 'name'
     parent_lookup_kwargs = {'repository_name': 'repository__name'}
     serializer_class = PublisherSerializer
     queryset = Publisher.objects.all()
+    nested_queryset = Repository.objects.all()
+
     filter_class = PublisherFilter
 
     def update(self, request, repository_name, name, partial=False):
+        if request.data.get('repository'):
+            return Response({}, status=status.HTTP_400_BAD_REQUEST)
+        data=request.data.copy()
+        data.update({'repository' : reverse('repositories-detail', args=[repository_name], request=request)})
+
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)

@@ -281,6 +281,7 @@ class DetailRelatedField(_DetailFieldMixin, serializers.HyperlinkedRelatedField)
         optimization breaks with Detail fields like this one which need access to their Meta
         class to get the relevant `view_name`.
         """
+
         return False
 
 

@@ -1,7 +1,9 @@
 import warnings
 
 from pulpcore.app.models import MasterModel
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets, mixins, status
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
 
 
 class GenericNamedModelViewSet(viewsets.GenericViewSet):
@@ -27,6 +29,14 @@ class GenericNamedModelViewSet(viewsets.GenericViewSet):
     endpoint_name = None
     nest_prefix = None
     parent_lookup_kwargs = {}
+    nested_queryset = {}
+
+    def get_parent_lookup_kwargs(self):
+        return self.parent_lookup_kwargs
+
+    def get_nested_queryset(self):
+       return self.nested_queryset
+
 
     @classmethod
     def is_master_viewset(cls):
@@ -131,6 +141,37 @@ class GenericNamedModelViewSet(viewsets.GenericViewSet):
                 filters[lookup] = self.kwargs[key]
             qs = qs.filter(**filters)
         return qs
+
+
+
+class NestedListModelMixin(object):
+    """
+    List a queryset.
+    """
+    def list(self, request, *args, **kwargs):
+        nest_queryset= self.get_nested_queryset()
+        for parent_lookup_kwarg in list(self.get_parent_lookup_kwargs().keys()):
+            get_object_or_404(nest_queryset, name= kwargs[parent_lookup_kwarg])
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+class NestedNamedModelViewSet(mixins.CreateModelMixin,
+                        mixins.RetrieveModelMixin,
+                        mixins.DestroyModelMixin,
+                        mixins.UpdateModelMixin,
+                        NestedListModelMixin,
+                        GenericNamedModelViewSet):
+
+    pass
+
 
 
 class NamedModelViewSet(mixins.CreateModelMixin,

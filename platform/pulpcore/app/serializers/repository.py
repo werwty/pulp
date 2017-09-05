@@ -131,7 +131,7 @@ class ImporterSerializer(MasterModelSerializer, NestedHyperlinkedModelSerializer
         read_only=True
     )
 
-    repository = RepositoryRelatedField()
+    repository = RepositoryRelatedField(help_text='The repository associated with this importer- not a valid configuration field')
 
     class Meta:
         abstract = True

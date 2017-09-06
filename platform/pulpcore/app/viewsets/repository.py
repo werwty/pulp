@@ -11,6 +11,7 @@ from pulpcore.app.serializers import (ContentSerializer, ImporterSerializer, Pub
 from pulpcore.app.viewsets import NamedModelViewSet
 from pulpcore.app.viewsets.custom_filters import CharInFilter
 from pulpcore.common import tags
+from pulpcore.app.viewsets.base import NestedNamedModelViewSet
 
 
 class RepositoryFilter(filterset.FilterSet):
@@ -113,7 +114,7 @@ class PublisherFilter(ContentAdaptorFilter):
         fields = ContentAdaptorFilter.Meta.fields
 
 
-class ImporterViewSet(NamedModelViewSet):
+class ImporterViewSet(NestedNamedModelViewSet):
     endpoint_name = 'importers'
     nest_prefix = 'repositories'
     lookup_field = 'name'
@@ -121,18 +122,9 @@ class ImporterViewSet(NamedModelViewSet):
     serializer_class = ImporterSerializer
     queryset = Importer.objects.all()
     filter_class = ImporterFilter
-
-    def update(self, request, repository_name, name, partial=False):
-        importer = self.get_object()
-        serializer = self.get_serializer(importer, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        app_label = importer._meta.app_label
-        async_result = tasks.importer.update.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, repository_name,
-            args=(importer.id, app_label, serializer.__class__.__name__),
-            kwargs={'data': request.data, 'partial': partial}
-        )
-        return OperationPostponedResponse([async_result], request)
+    task_tag= tags.RESOURCE_REPOSITORY_TYPE
+    task_type=tasks.importer
+    parent_viewset = RepositoryViewSet
 
     def destroy(self, request, repository_name, name):
         importer = self.get_object()

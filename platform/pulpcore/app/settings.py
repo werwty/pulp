@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'rest_framework',
     # pulp platform app
     'pulpcore.app',
+    'drf_openapi'
 ]
 
 # add plugins to INSTALLED_APPS after platform
@@ -114,7 +115,9 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ('rest_framework.filters.DjangoFilterBackend',),
     'DEFAULT_PAGINATION_CLASS': 'pulpcore.app.pagination.UUIDPagination',
     'PAGE_SIZE': 100,
-    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated',)
+   # 'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated',)
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning'
+
 }
 
 
@@ -272,6 +275,14 @@ def load_settings(paths=None):
 
     return settings
 
+
+#def no_auth(view_func):
+#    """
+#    Decorator for views that checks that the user is logged in and is a staff
+#    member, redirecting to the login page if necessary.
+#   """
+#    return view_func
+#DOC_SCHEMA_PERMISSION_DECORATOR = 'pulpcore.app.settings.no_auth'
 
 # Read PULP_SETTINGS environment variable to find the location of server.yaml,
 # defaults to /etc/pulp/server.yaml

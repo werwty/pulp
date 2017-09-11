@@ -2,6 +2,7 @@ from gettext import gettext as _
 
 from rest_framework import serializers
 from rest_framework_nested.serializers import NestedHyperlinkedModelSerializer
+from rest_framework.status import HTTP_400_BAD_REQUEST
 
 from pulpcore.app import models
 from pulpcore.app.serializers import (MasterModelSerializer, ModelSerializer,
@@ -64,7 +65,9 @@ class RepositorySerializer(ModelSerializer):
         fields = ModelSerializer.Meta.fields + ('name', 'description', 'notes',
                                                 'last_content_added', 'last_content_removed',
                                                 'importers', 'publishers', 'content')
-
+        error_status_codes = {
+            HTTP_400_BAD_REQUEST: 'Bad Request'
+        }
 
 class ImporterSerializer(MasterModelSerializer, NestedHyperlinkedModelSerializer):
     """

@@ -59,7 +59,7 @@ PyPI Installation
 2. Create a pulp virtualenv::
 
    $ virtualenv {virtualenv} -p python3
-   $ source {virtualenv}/bin/activate
+   $ source {virtualenv}/bin/activsate
 
 3. Install Pulp::
 

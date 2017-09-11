@@ -6,7 +6,7 @@ Pulp Documentation
    installation/index
    workflows/index
    cli_guide/index
-   integration_guide/index
+   rest_api_reference/index
    contributing/index
    plugins/index
    release_notes/index

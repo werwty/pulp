@@ -1,4 +1,5 @@
 """pulp URL Configuration"""
+
 from django.conf.urls import url, include
 from rest_framework_nested import routers
 
@@ -107,11 +108,24 @@ root_router = routers.DefaultRouter(
     schema_url='/api/v3'
 )  #: The Pulp Platform v3 API router, which can be used to manually register ViewSets with the API.
 
+
+
+from rest_framework import permissions
+from drf_openapi.views import SchemaView
+
+class MySchemaView(SchemaView):
+    permission_classes = (permissions.AllowAny,)
+
+
 urlpatterns = [
     url(r'^{}/'.format(ContentView.BASE_PATH), ContentView.as_view()),
     url(r'^api/v3/status/', StatusView.as_view()),
+    url(r'docs/(?P<version>(v3))/', MySchemaView.as_view(title='My Awesome API'), name='api_schema'),
 ]
+
 
 all_routers = [root_router] + vs_tree.register_with(root_router)
 for router in all_routers:
     urlpatterns.append(url(r'^api/v3/', include(router.urls)))
+
+

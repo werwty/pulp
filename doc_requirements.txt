@@ -4,6 +4,8 @@ django
 djangorestframework
 django-filter
 drf-nested-routers
+pulpcore
+pulpcore-plugin
 pyyaml
 psycopg2
 sphinx

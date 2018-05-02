@@ -21,7 +21,7 @@ before_script: source .travis/before_script.sh
 script: source .travis/script.sh
 deploy:
   - provider: script
-    script: .travis/deploy.sh
+    script: source .travis/deploy.sh
     on:
       tags: true
       all_branches: true

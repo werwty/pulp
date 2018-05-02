@@ -22,5 +22,5 @@ script: source .travis/script.sh
 deploy:
   provider: script
   script: source .travis/deploy.sh
-    on:
-      branch: rtd-test
+  on:
+    branch: rtd-test

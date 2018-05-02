@@ -16,15 +16,11 @@ addons:
 services:
     - postgresql
     - rabbitmq
-
+install: source .travis/install.sh
+before_script: source .travis/before_script.sh
+script: source .travis/script.sh
 jobs:
   include:
-    - stage: install
-      script: source .travis/install.sh
-    - stage: before-test
-      script: source .travis/before_script.sh
-    - stage: test
-      script: source .travis/script.sh
     - stage: deploy
       deploy:
         provider: script

@@ -22,7 +22,5 @@ script: source .travis/script.sh
 jobs:
   include:
     - stage: deploy
-      deploy:
-        provider: script
-        script: source .travis/push-pypi.sh
+      script: source .travis/push-pypi.sh
 

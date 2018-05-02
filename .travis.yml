@@ -8,8 +8,6 @@ python:
     - "3.6"
 env:
   - DJANGO_MAX=1.11.100 DB=postgres TEST=pulp
-  - DJANGO_MAX=2.2.100 DB=postgres TEST=pulp
-  - TEST=docs
 matrix:
   fast_finish: true
 addons:

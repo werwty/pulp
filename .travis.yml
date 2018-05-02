@@ -19,11 +19,9 @@ services:
 install: source .travis/install.sh
 before_script: source .travis/before_script.sh
 script: source .travis/script.sh
-
-
 deploy:
   - provider: script
-    script: deploy.sh
+    script: .travis/deploy.sh
     on:
       tags: true
       all_branches: true

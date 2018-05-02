@@ -27,5 +27,4 @@ deploy:
   provider: script
   script: deploy.sh
   on:
-    condition: $TRAVIS_TAG = "3.0"*
     tags: true

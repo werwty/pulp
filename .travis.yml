@@ -1,23 +1,54 @@
 sudo: required
-# https://docs.travis-ci.com/user/trusty-ci-environment/
 dist: trusty
 language: python
 python:
-    # python versions used in el7 SCL & supported fedora
-    - "3.5"
-    - "3.6"
+- '3.5'
+- '3.6'
 env:
+  matrix:
   - DJANGO_MAX=1.11.100 DB=postgres TEST=pulp
   - DJANGO_MAX=2.2.100 DB=postgres TEST=pulp
   - TEST=docs
+  global:
+    secure: Gnvq5WdunXVnEl5fmLUvMwJVI+myNZrCIlme9+napfhmGZiHAk/O0+Ehm7jInagqTxZl1Sifl1cKmEOTgIUP4T/0qpZvzEpzCvikWKvLONP2lLx/w/K+oaETw1ofAjPd/1Cg1EoJyJiiuButKZB3WADJ7cWLf4OZJ+zGXe8vRDRnYZ3Y+ep7gDSFewqMT7IGMaMUObhOhkWvC6u5SVndxixYpNbWcsW/DFrwT8x1iZu3E16IZN4h4OpPmmERYsS/+kABOkQZH/LfJIBHe9+uPtJVd+3Ol8S6auVidYaEHnyAasVs2pSupaHBDwaLKcLPY8ykO/07tmzk4I7mAFzjE6/hr+K9IrDp23sAuomlErwI3IAkjWg3uPANpSkLhNvls/SahY6ZS2gszyAjJSgb5YOfCmPThyHM8UhTh1A9ou8HFSEIEqn91wtIPxh/kaJC/DelorIetYHJewEmc1Jj7wqaBWtNv46/Z0LaPJbyZiBuzZEqLRBQHdUIpavkr2cMhG8DLQaaOSw1sG7ZLpVARvycL0/repXDpWXL+REHHW/NwcIV2bJ719ytkphzGXwcyZHE7FjZeCs0DhPFFU4MNAwOq/WBjraBVdK4OyQXxMqOCgqBdy/iHpmIOMXjDqxpEYxDqeDRoZBdT/hWTF84SZmrQ/hco100EhIZLHZ/2LE=
 matrix:
   fast_finish: true
 addons:
-    # postgres versions provided by el7 RHSCL (lowest supportable version)
-    postgresql: "9.5"
+  postgresql: '9.5'
 services:
-    - postgresql
-    - rabbitmq
+- postgresql
+- rabbitmq
 install: source .travis/install.sh
 before_script: source .travis/before_script.sh
 script: source .travis/script.sh
+stages:
+- name: test
+- name: deploy-pulpcore
+  if: tag =~ ^pulpcore-3.0.0*
+- name: deploy-plugin
+  if: tag =~ ^pulpcore-plugin-3.0.0*
+- name: deploy-common
+  if: tag =~ ^pulpcore-common-3.0.0*
+jobs:
+  include:
+  - stage: deploy-pulpcore
+    script: skip
+    deploy:
+      provider: script
+      script: source .travis/deploy.sh pulpcore
+      on:
+        tags: true
+  - stage: deploy-plugin
+    script: skip
+    deploy:
+      provider: script
+      script: bash .travis/deploy.sh plugin
+      on:
+        tags: true
+  - stage: deploy-common
+    script: skip
+    deploy:
+      provider: script
+      script: bash .travis/deploy.sh common
+      on:
+        tags: true

@@ -44,10 +44,6 @@ else
     cat ~/reserved_workers-1.log
   fi
 
-  if [ $result -eq 0 ]; then
-    # upload coverage report to codecov
-    codecov
-  fi
 fi
 
 exit $result

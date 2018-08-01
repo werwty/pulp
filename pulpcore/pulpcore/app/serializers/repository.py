@@ -6,6 +6,8 @@ from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
+from collections import OrderedDict
+
 from pulpcore.app import models
 from pulpcore.app.serializers import (
     BaseURLField,
@@ -17,6 +19,10 @@ from pulpcore.app.serializers import (
     ModelSerializer,
 )
 from pulpcore.app.serializers import validate_unknown_fields
+from pulpcore.app.serializers.base import DetailIdentityField
+
+from pulpcore.app.serializers.fields import IdentifierField
+
 from rest_framework_nested.relations import (NestedHyperlinkedIdentityField,
                                              NestedHyperlinkedRelatedField)
 from rest_framework_nested.serializers import NestedHyperlinkedModelSerializer
@@ -124,7 +130,7 @@ class RemoteSerializer(MasterModelSerializer):
 
 
 class RepositorySyncURLSerializer(serializers.Serializer):
-    repository = serializers.HyperlinkedRelatedField(
+    repository = IdentifierField(
         required=True,
         help_text=_('A URI of the repository to be synchronized.'),
         queryset=models.Repository.objects.all(),
@@ -136,6 +142,7 @@ class RepositorySyncURLSerializer(serializers.Serializer):
 
 
 class PublisherSerializer(MasterModelSerializer):
+
     """
     Every publisher defined by a plugin should have an Publisher serializer that inherits from this
     class. Please import from `pulpcore.plugin.serializers` rather than from this module directly.
@@ -379,6 +386,30 @@ class PublicationSerializer(ModelSerializer):
         )
 
 
+class ContentSummarySerializer(serializers.ModelSerializer):
+    _href = DetailIdentityField()
+
+    id = serializers.PrimaryKeyRelatedField(
+        read_only=True,
+    )
+
+    type = serializers.CharField(source='TYPE')
+
+    class Meta:
+        model = models.Content
+        fields = ('_href','id', 'type')
+
+    def to_representation(self, instance):
+        """
+        Represent a cast Detail instance as a dict of primitive datatypes
+        """
+
+        # Cast instance before passint it to super
+        instance = instance.cast()
+
+        return super().to_representation(instance)
+
+
 class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSerializer):
     _href = NestedHyperlinkedIdentityField(
         view_name='versions-detail',
@@ -388,14 +419,33 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
         view_name='versions-content',
         lookup_field='number', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
     )
+    content = ContentSummarySerializer(
+        many=True,
+        read_only=True,
+    )
+
     _added_href = NestedHyperlinkedIdentityField(
         view_name='versions-added-content',
         lookup_field='number', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
     )
+
+    added_content = ContentSummarySerializer(
+        many=True,
+        read_only=True,
+        source='added',
+    )
+
     _removed_href = NestedHyperlinkedIdentityField(
         view_name='versions-removed-content',
         lookup_field='number', parent_lookup_kwargs={'repository_pk': 'repository__pk'},
     )
+
+    removed_content = ContentSummarySerializer(
+        many=True,
+        read_only=True,
+        source='removed',
+    )
+
     number = serializers.IntegerField(
         read_only=True
     )
@@ -416,5 +466,5 @@ class RepositoryVersionSerializer(ModelSerializer, NestedHyperlinkedModelSeriali
         model = models.RepositoryVersion
         fields = ModelSerializer.Meta.fields + (
             '_href', '_content_href', '_added_href', '_removed_href', 'number',
-            'content_summary', 'add_content_units', 'remove_content_units'
+            'content_summary', 'add_content_units', 'remove_content_units', 'content', 'added_content', 'removed_content'
         )

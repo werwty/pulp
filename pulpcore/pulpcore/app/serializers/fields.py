@@ -2,6 +2,8 @@ from gettext import gettext as _
 import os
 
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
+
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 from rest_framework_nested.relations import NestedHyperlinkedRelatedField
@@ -166,3 +168,18 @@ class BaseURLField(serializers.CharField):
         else:
             host = self.context['request'].get_host()
         return ''.join([host, reverse('content-app'), value])
+
+
+class IdentifierField(serializers.HyperlinkedRelatedField):
+
+    def to_internal_value(self, data):
+        http_prefix = data.startswith(('http:', 'https:'))
+        if not http_prefix:
+            try:
+                return self.get_queryset().get(pk=data)
+            except ObjectDoesNotExist:
+                self.fail('does_not_exist', pk_value=data)
+            except (TypeError, ValueError):
+                self.fail('incorrect_type', data_type=type(data).__name__)
+        else:
+            return super().to_internal_value(data)

@@ -176,7 +176,7 @@ class PublisherSerializer(MasterModelSerializer):
 
 class RepositoryPublishURLSerializer(serializers.Serializer):
 
-    repository = serializers.HyperlinkedRelatedField(
+    repository = IdentifierField(
         help_text=_('A URI of the repository to be synchronized.'),
         required=False,
         label=_('Repository'),

@@ -22,7 +22,13 @@ class CreatedResourceSerializer(ModelSerializer):
         request = self.context['request']
         viewset = viewset_for_model(data.content_object)
         serializer = viewset.serializer_class(data.content_object, context={'request': request})
-        return serializer.data.get('_href')
+        created_resource = {
+            '_href': serializer.data.get('_href'),
+            'id': serializer.data.get('id')
+        }
+        if 'number' in serializer.data:
+            created_resource['number'] = serializer.data.get('number')
+        return created_resource
 
     class Meta:
         model = models.CreatedResource
